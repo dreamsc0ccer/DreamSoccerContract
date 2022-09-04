@@ -232,38 +232,38 @@ contract Operator is Context, Ownable {
 
         uint256 amount;
 
-        if (claimTime[msg.sender] + 7 days < block.timestamp) {
+        if (claimTime[msg.sender] + 6 days < block.timestamp) {
 
             amount = rewardTraining[msg.sender];   
             
 
-        } else if (claimTime[msg.sender] + 6 days < block.timestamp) {
+        } else if (claimTime[msg.sender] + 5 days < block.timestamp) {
 
             amount = rewardTraining[msg.sender].mul(95).div(100);  
 
-        } else if (claimTime[msg.sender] + 5 days < block.timestamp) {
+        } else if (claimTime[msg.sender] + 4 days < block.timestamp) {
 
             amount = rewardTraining[msg.sender].mul(90).div(100);
             
-        } else if (claimTime[msg.sender] + 4 days < block.timestamp) {
+        } else if (claimTime[msg.sender] + 3 days < block.timestamp) {
 
             amount = rewardTraining[msg.sender].mul(85).div(100);  
             
-        } else if (claimTime[msg.sender] + 3 days < block.timestamp) {
+        } else if (claimTime[msg.sender] + 2 days < block.timestamp) {
 
             amount = rewardTraining[msg.sender].mul(80).div(100);  
             
-        } else if (claimTime[msg.sender] + 2 days < block.timestamp) {
+        } else if (claimTime[msg.sender] + 1 days < block.timestamp) {
 
             amount = rewardTraining[msg.sender].mul(75).div(100);  
             
-        } else if (claimTime[msg.sender] + 1 days < block.timestamp) {
+        } else if (claimTime[msg.sender] < block.timestamp) {
 
             amount = rewardTraining[msg.sender].mul(70).div(100);  
             
         }
- 
-        ERC20(_tokenReward).transfer(msg.sender, amount);
+        
+        amount > ERC20(_tokenReward).balanceOf(address(this)) ? ERC20(_tokenReward).transfer(msg.sender, ERC20(_tokenReward).balanceOf(address(this)) ) : ERC20(_tokenReward).transfer(msg.sender, amount);
 
         isClaimed[msg.sender] = false;
 
@@ -299,9 +299,11 @@ contract Operator is Context, Ownable {
     
     function claimMosterReward() external {
 
-        require(rewardMonster[msg.sender] > 0, "You do not have any token to claim" );
+        uint256 amount = rewardMonster[msg.sender];
 
-        ERC20(_tokenReward).transfer(msg.sender, rewardMonster[msg.sender]);
+        require(amount > 0, "You do not have any token to claim" );
+
+        amount > ERC20(_tokenReward).balanceOf(address(this)) ? ERC20(_tokenReward).transfer(msg.sender, ERC20(_tokenReward).balanceOf(address(this)) ) : ERC20(_tokenReward).transfer(msg.sender, amount);
 
         rewardMonster[msg.sender] = 0;
 
