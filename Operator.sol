@@ -13,11 +13,15 @@ interface IFootballer {
 
     function getNFTInformation(uint256 nftID) external view returns (uint256 Attribute, uint256 Energy, uint256 lastestUpdate);
 
-    function Training(uint256 nftID, address user) external;
+    function Training(uint256 nftID, address user, uint256 multiplier) external;
 
     function setNewTokenRewardAddress(address tokenReward) external;
 
     function mint(uint256 attribute, address user) external;
+
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function buyEnery(uint nftID) external;
 }
 
 interface IMonsterFootball {
@@ -25,6 +29,8 @@ interface IMonsterFootball {
     function getMonsterInformation(uint256 nftID) external view returns (uint256 difficult, uint256 startTime, uint256 endTime);
 
     function caculatorReward(uint256 nftID, uint256 monsterID) external view returns (uint256 reward);
+
+    function callMonster() external;
 
 }
 
@@ -52,8 +58,6 @@ contract Operator is Context, Ownable {
 
     address private _tokenReward;
 
-    address payable private _TreasuryAddress = payable(0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC);
-
     mapping (address => uint256) private rewardTraining;
 
     mapping (address => uint256) private rewardMonster;
@@ -69,6 +73,17 @@ contract Operator is Context, Ownable {
     IShoes _shoes;
 
     IPices _pices;
+
+    uint256 private _commonPrice = 2000000 * 10 ** 9;
+    uint256 private _rarePrice = 3000000 * 10 ** 9;
+    uint256 private _legendaryPrice = 4500000 * 10 ** 9; 
+
+    uint256 private _price;
+
+    uint256 private _priceCombine = 4500000 * 10**9;
+    uint256 private _enegryPrice;
+
+    address payable private _TreasuryAddress = payable(0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC);
 
     function setNewTokenRewardAddress(address tokenReward) external onlyOwner() {
 
@@ -102,6 +117,11 @@ contract Operator is Context, Ownable {
         
     }
 
+    function getPrice() external view returns (uint256 commonPrice, uint256 rarePrice, uint256 legendaryPrice) {
+
+        return (_commonPrice, _rarePrice, _legendaryPrice);
+
+    }
 
     function Footballer() external view returns (address) {
         return address(_footballer);
@@ -128,17 +148,18 @@ contract Operator is Context, Ownable {
 
     function mint(uint256 attribute) external {
 
+        priceMint(attribute);
         _footballer.mint(attribute, msg.sender);
 
     }
 
+    function TrainingNFT(uint256 nftID, uint256 difficult, uint256 multiplier) external returns (uint256 reward) {
 
+        require(multiplier > 0, "Error");
 
-    function TrainingNFT(uint256 nftID, uint256 difficult) external {
-
-        _footballer.Training(nftID, msg.sender);
+        _footballer.Training(nftID, msg.sender, multiplier);
         
-        uint256 reward = _footballer.caculatorReward(nftID, difficult, msg.sender);
+        reward = _footballer.caculatorReward(nftID, difficult, msg.sender) * multiplier;
 
         rewardTraining[msg.sender] += reward; 
 
@@ -155,6 +176,56 @@ contract Operator is Context, Ownable {
 
     function getTotalReward(address user) external view returns (uint256) {
         return rewardTraining[user];
+    }
+
+    function priceMint(uint256 attribute) private {
+
+        require(attribute < 3, "Error");
+        
+        if (attribute == 0) {
+
+            _price =  _commonPrice;
+
+        } else if (attribute == 1) {
+
+            _price = _rarePrice;
+
+        } else {
+
+            _price = _legendaryPrice;
+
+        }
+
+        require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens to buy"); 
+
+        ERC20(_tokenReward).transferFrom(msg.sender, _TreasuryAddress , _price);    
+         
+
+    }
+
+    function buyEnery(uint256 nftID) external {
+
+        require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens"); 
+
+        (uint256 Attribute  , , ) = _footballer.getNFTInformation(nftID);
+
+        if (Attribute == 0) {
+
+            _price = _commonPrice.div(2);
+
+        } else if (Attribute ==1) {
+
+            _price = _rarePrice.div(2);
+
+        } else {
+
+            _price = _legendaryPrice.div(2);
+            
+        }
+
+        ERC20(_tokenReward).transferFrom(msg.sender, _TreasuryAddress , _price);   
+
+        _footballer.buyEnery(nftID);
     }
 
     function claim() external {
@@ -203,19 +274,26 @@ contract Operator is Context, Ownable {
         return rewardMonster[user];
     }
 
-    function fightMonster(uint256 nftID, uint256 monsterID) external {
+    function callMonster() external onlyOwner {
+        _monster.callMonster();
+    }
+    
+    function fightMonster(uint256 nftID, uint256 monsterID, uint256 multiplier) external returns (uint256 reward) {
+
+        require(multiplier > 0, "Error");
 
         (  , , uint256 endTime) = _monster.getMonsterInformation(monsterID);
 
         require(endTime > block.timestamp, "End Time");
         
-        _footballer.Training(nftID, msg.sender);
+        _footballer.Training(nftID, msg.sender, multiplier);
 
-        uint256 reward = _monster.caculatorReward(nftID, monsterID);
+        reward = _monster.caculatorReward(nftID, monsterID) * multiplier;
 
         _pices.rewardPices(msg.sender);
 
         rewardMonster[msg.sender] += reward;
+
 
     }
     
@@ -230,6 +308,8 @@ contract Operator is Context, Ownable {
     }
 
     function combine(uint256[] memory picesID) external {
+
+        _footballer.transferFrom(msg.sender, _TreasuryAddress, _priceCombine);
 
         _pices.combineShoesPices(picesID, msg.sender);
     }
