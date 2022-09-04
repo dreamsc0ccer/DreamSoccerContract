@@ -12,7 +12,7 @@ contract Footballer is ERC721, Ownable {
 
     using SafeMath for uint256;
 
-    address _operator;
+    address _operator = 0x9d9EA6FFf3915f08B7269984C6b6B0916A33eD29;
 
     struct Character {
         uint256 attribute;
@@ -75,19 +75,19 @@ contract Footballer is ERC721, Ownable {
 
         Attribute = characters[nftID].attribute;
           
-        if (characters[nftID].lastestUpdate + 8 hours > block.timestamp) { // 0 Energy
+        if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
 
             Energy = characters[nftID].currentEnergy;
 
-          } else if ((characters[nftID].lastestUpdate + 8 hours < block.timestamp) && (characters[nftID].lastestUpdate + 16 hours > block.timestamp)) { // 1 Energy
+          } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
 
                 characters[nftID].currentEnergy < 3 ? Energy = characters[nftID].currentEnergy + 1 : Energy = characters[nftID].currentEnergy;
 
-          } else if ((characters[nftID].lastestUpdate + 16 hours < block.timestamp) && (characters[nftID].lastestUpdate + 24 hours > block.timestamp)) { // 2 Energy
+          } else if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
 
                 characters[nftID].currentEnergy > 0 ? Energy = 3 : Energy = 2;
 
-          } else { // 3 Energy
+          } else if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
 
                 Energy = 3;
 
@@ -95,15 +95,36 @@ contract Footballer is ERC721, Ownable {
 
         if (Energy == 2) {
 
-            lastestUpdate = 8 hours + characters[nftID].lastestUpdate - block.timestamp;
+            if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) {
+
+                lastestUpdate = 1 minutes + characters[nftID].lastestUpdate - block.timestamp;
+
+            } else {
+
+                lastestUpdate = 2 minutes + characters[nftID].lastestUpdate - block.timestamp;
+
+            }
+
+            
 
         } else if (Energy == 1) {
 
-            lastestUpdate = 16 hours + characters[nftID].lastestUpdate - block.timestamp;
+            if (characters[nftID].lastestUpdate + 2 minutes > block.timestamp) {
+
+                lastestUpdate = 2 minutes + characters[nftID].lastestUpdate - block.timestamp;
+
+            } else {
+
+                lastestUpdate = 3 minutes + characters[nftID].lastestUpdate - block.timestamp;
+
+            }
+
+
+            
 
         } else if  (Energy == 0) {
 
-            lastestUpdate = 24 hours + characters[nftID].lastestUpdate  - block.timestamp;
+            lastestUpdate = 3 minutes + characters[nftID].lastestUpdate  - block.timestamp;
 
         } else {
             
@@ -113,6 +134,33 @@ contract Footballer is ERC721, Ownable {
 
           
     }
+
+    function getNFTInformation1(uint256 nftID) external view returns (uint256 Attribute, uint256 Energy, uint256 lastestUpdate) {
+
+        Attribute = characters[nftID].attribute;
+          
+        if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
+
+            Energy = characters[nftID].currentEnergy;
+
+          } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
+
+                characters[nftID].currentEnergy < 3 ? Energy = characters[nftID].currentEnergy + 1 : Energy = characters[nftID].currentEnergy;
+
+          } else if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
+
+                characters[nftID].currentEnergy > 0 ? Energy = 3 : Energy = 2;
+
+          } else if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
+
+                Energy = 3;
+
+          }
+
+        lastestUpdate = characters[nftID].lastestUpdate;
+          
+    }
+
     function _mint(uint256 attribute, address user) private {
 
         uint256 newItemId = characters.length;
@@ -141,19 +189,26 @@ contract Footballer is ERC721, Ownable {
 
       require(ownerOf(nftID) == user, "User have to owner of this NFT");      
 
-      if (characters[nftID].lastestUpdate + 8 hours > block.timestamp) { // 0 Energy
+    //    uint256 Energy = getEnergy(nftID);
+
+    //     if (Energy == 3) {
+
+    //         characters[nftID].lastestUpdate = block.timestamp;
+    //     }
+
+      if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
 
            update0Energy(nftID, multiplier);
 
-        } else if ((characters[nftID].lastestUpdate + 8 hours < block.timestamp) && (characters[nftID].lastestUpdate + 16 hours > block.timestamp)) { // 1 Energy
+        } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
 
           update1Energy(nftID, multiplier);
 
-        } else if ((characters[nftID].currentEnergy > 0) && (characters[nftID].lastestUpdate + 16 hours < block.timestamp) && (characters[nftID].lastestUpdate + 24 hours > block.timestamp)  ) { // 2 Energy
+        } else if ((characters[nftID].currentEnergy > 0) && (characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)  ) { // 2 Energy
 
           update2Energy(nftID, multiplier);
 
-        } else { // 3 Energy
+        } else if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
 
             characters[nftID].currentEnergy == 3 - multiplier;
 
@@ -163,6 +218,27 @@ contract Footballer is ERC721, Ownable {
 
 
     }
+
+    // function getEnergy(uint256 nftID) private view returns (uint256 Energy) {  
+
+    //     if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
+
+    //         Energy = characters[nftID].currentEnergy;
+
+    //       } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
+
+    //             characters[nftID].currentEnergy < 3 ? Energy = characters[nftID].currentEnergy + 1 : Energy = characters[nftID].currentEnergy;
+
+    //       } else if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
+
+    //             characters[nftID].currentEnergy > 0 ? Energy = 3 : Energy = 2;
+
+    //       } else { // 3 Energy
+
+    //             Energy = 3;
+
+    //       }
+    // }
 
     function caculatorDifcult(uint256 difficult, address user) public view returns (uint256 diff) {
         bytes memory source;
@@ -212,6 +288,8 @@ contract Footballer is ERC721, Ownable {
         if (multiplier == 1) {
             
             require(characters[nftID].currentEnergy > 0, "Error");
+            
+
 
             characters[nftID].currentEnergy = characters[nftID].currentEnergy - multiplier;
 
