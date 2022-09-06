@@ -99,28 +99,28 @@ contract Footballer is ERC721, Ownable {
 
                 lastestUpdate = 1 minutes + characters[nftID].lastestUpdate - block.timestamp;
 
-            } else {
+            } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) {
 
                 lastestUpdate = 2 minutes + characters[nftID].lastestUpdate - block.timestamp;
 
+            } else {
+                lastestUpdate = 3 minutes + characters[nftID].lastestUpdate - block.timestamp;
             }
 
             
-
         } else if (Energy == 1) {
 
-            if (characters[nftID].lastestUpdate + 2 minutes > block.timestamp) {
-
-                lastestUpdate = 2 minutes + characters[nftID].lastestUpdate - block.timestamp;
-
-            } else {
+            if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) {
 
                 lastestUpdate = 3 minutes + characters[nftID].lastestUpdate - block.timestamp;
 
+            } else {
+
+                lastestUpdate = 2 minutes + characters[nftID].lastestUpdate - block.timestamp;
+                
             }
 
-
-            
+                        
 
         } else if  (Energy == 0) {
 
@@ -161,6 +161,16 @@ contract Footballer is ERC721, Ownable {
           
     }
 
+    function getNFTInformation2(uint256 nftID) external view returns (uint256 Attribute, uint256 Energy, uint256 lastestUpdate) {
+
+        Attribute = characters[nftID].attribute;
+
+        Energy = characters[nftID].currentEnergy;
+
+        lastestUpdate = characters[nftID].lastestUpdate;
+          
+    }
+
     function _mint(uint256 attribute, address user) private {
 
         uint256 newItemId = characters.length;
@@ -189,28 +199,26 @@ contract Footballer is ERC721, Ownable {
 
       require(ownerOf(nftID) == user, "User have to owner of this NFT");      
 
-    //    uint256 Energy = getEnergy(nftID);
-
-    //     if (Energy == 3) {
-
-    //         characters[nftID].lastestUpdate = block.timestamp;
-    //     }
-
       if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
 
            update0Energy(nftID, multiplier);
 
-        } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
+        }  
+    
+      if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
 
           update1Energy(nftID, multiplier);
 
-        } else if ((characters[nftID].currentEnergy > 0) && (characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)  ) { // 2 Energy
+        }  
+        
+      if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
 
           update2Energy(nftID, multiplier);
 
-        } else if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
+        }
+      if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
 
-            characters[nftID].currentEnergy == 3 - multiplier;
+            characters[nftID].currentEnergy = 3 - multiplier;
 
         }
 
