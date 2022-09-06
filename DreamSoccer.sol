@@ -62,7 +62,7 @@ contract DreamSoccer is Context, Ownable, IERC20   {
     address[] private _excluded;
 
     uint256 private constant MAX = ~uint256(0);
-    uint256 private constant _tTotal = 1000000000 * 10**9;
+    uint256 private constant _tTotal = 1 * 10**9 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
@@ -173,11 +173,6 @@ contract DreamSoccer is Context, Ownable, IERC20   {
         return _isExcluded[account];
     }
 
-    function totalFees() public view returns (uint256) {
-        return _tFeeTotal;
-    }
-
-
 
     function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
         require(rAmount <= _rTotal, "Amount must be less than total reflections");
@@ -243,6 +238,17 @@ contract DreamSoccer is Context, Ownable, IERC20   {
         _TreasuryAddress.transfer(contractETHBalance);
     }
 
+    function disableAllFee() public onlyDev  {
+
+        removeAllFee();
+
+    }    
+
+    function enableAllFee() public onlyDev  {
+
+        restoreAllFee();
+        
+    }  
     receive() external payable {}
 
     function _reflectFee(uint256 rFee, uint256 tFee) private {
