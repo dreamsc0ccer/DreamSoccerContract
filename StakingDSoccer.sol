@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract LotteryBall is Context, Ownable {
+contract StakingDSoccer is Context, Ownable {
     using SafeMath for uint256;
     
     struct UserInfo {
