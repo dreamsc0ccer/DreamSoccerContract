@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity >=0.6.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -21,7 +21,7 @@ interface IFootballer {
 
     function transferFrom(address from, address to, uint value) external returns (bool);
 
-    function buyEnery(uint nftID) external;
+    function buyEnergy(uint nftID) external;
 }
 
 interface IMonsterFootball {
@@ -34,15 +34,15 @@ interface IMonsterFootball {
 
 }
 
-interface IPices {
+interface IPieces {
 
     function Shoes() external view returns (address);
 
-    function getNFTPicesInformation(uint256 picesID) external view returns (uint256);
+    function getNFTPiecesInformation(uint256 piecesID) external view returns (uint256);
 
-    function rewardPices(address user) external;
+    function rewardPieces(address user) external;
 
-    function combineShoesPices(uint256[] memory picesID, address user) external;
+    function combineShoesPieces(uint256[] memory piecesID, address user) external;
 
 }
 
@@ -50,7 +50,7 @@ interface IShoes {
 
     function mint(address user, uint256 attr) external;
 
-    function Pices() external view returns (address);
+    function pieces() external view returns (address);
 
     function getShoesInformation(uint256 shoesID) external view returns (uint256);
 
@@ -73,7 +73,7 @@ contract StakingDSoccer is Context, Ownable {
 
     address private _tokenReward;
     uint256 private _totalToBeMintAmount;
-    uint256 private _APR = 365 * 24 * 60 * 20 * 100;
+    uint256 private _APR = 100;
 
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
@@ -85,10 +85,15 @@ contract StakingDSoccer is Context, Ownable {
     }
 
     function setAPR(uint256 APR) external onlyOwner {
+
+        require(APR > 0, "APR must be greater than 0");
+
         _APR = APR;
     }
 
     function setTokenReward(address tokenReward) external onlyOwner {
+
+        require(tokenReward != address(0), "Token Reward address is not NULL address");
         _tokenReward = tokenReward;
     }
 
@@ -222,7 +227,7 @@ contract NFTStaking is Context, Ownable {
     uint256 private _totalRare;
     uint256 private _totalLegendary;
 
-    uint256 private _APR = 365 * 24 * 60 * 20 * 100;
+    uint256 private _APR = 100;
 
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
@@ -375,8 +380,6 @@ contract Operator is Context, Ownable {
 
     using SafeMath for uint256;
 
-    StakingDSoccer sDSoccer;
-
     address private _tokenReward;
 
     StakingDSoccer private _stakingDSoccer = new StakingDSoccer();
@@ -399,20 +402,25 @@ contract Operator is Context, Ownable {
 
     IShoes _shoes;
 
-    IPices _pices;
+    IPieces _pieces;
 
-    uint256 private _commonPrice = 2000000 * 10 ** 9;
-    uint256 private _rarePrice = 3000000 * 10 ** 9;
-    uint256 private _legendaryPrice = 4500000 * 10 ** 9; 
+    uint256 private _commonPrice = 20000 * 10 ** 9;
+    uint256 private _rarePrice = 50000 * 10 ** 9;
+    uint256 private _legendaryPrice = 60000 * 10 ** 9; 
 
     uint256 private _price;
 
-    uint256 private _priceCombine = 4500000 * 10**9;
-    uint256 private _enegryPrice;
+    uint256 private _priceCombine = 10000 * 10**9;
+
+    uint256 private _energyPrice;
+
+    bool private _isRecoveryEnergyOpen;
 
     address payable private _TreasuryAddress = payable(0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC);
 
     function setNewTokenRewardAddress(address tokenReward) external onlyOwner() {
+
+        require(tokenReward != address(0), "Token Reward address is not NULL address");
 
         _tokenReward = tokenReward;
 
@@ -422,11 +430,15 @@ contract Operator is Context, Ownable {
 
     function setFootballerAddress(address footballer) external onlyOwner() {
 
+        require(footballer != address(0), "Footballer address is not NULL address");
+
         _footballer = IFootballer(footballer);
         
     }
 
     function setMonsterAddress(address monster) external onlyOwner() {
+
+        require(monster != address(0), "Monster address is not NULL address");
 
         _monster = IMonsterFootball(monster);
         
@@ -434,14 +446,31 @@ contract Operator is Context, Ownable {
 
     function setShoesAddress(address shoes) external onlyOwner() {
 
+        require(shoes != address(0), "Shoes address is not NULL address");
+
         _shoes = IShoes(shoes);
         
     }
 
-    function setPicesAddress(address pices) external onlyOwner() {
+    function setPiecesAddress(address pieces) external onlyOwner() {
 
-        _pices = IPices(pices);
+        require(pieces != address(0), "Pieces address is not NULL address");
+
+        _pieces = IPieces(pieces);
         
+    }
+
+    function setRecoveryEnergyStatus(bool status) external onlyOwner() {
+
+        _isRecoveryEnergyOpen = status;
+
+    }
+
+    
+    function getRecoveryEnergyStatus() external view returns (bool) {
+
+        return _isRecoveryEnergyOpen;
+
     }
 
     function getPrice() external view returns (uint256 commonPrice, uint256 rarePrice, uint256 legendaryPrice) {
@@ -476,8 +505,8 @@ contract Operator is Context, Ownable {
     }
 
 
-    function Pices() external view returns (address) {
-        return address(_pices);
+    function Pieces() external view returns (address) {
+        return address(_pieces);
     }
 
 
@@ -485,16 +514,19 @@ contract Operator is Context, Ownable {
         return _tokenReward;
     }
 
+
+
     function mint(uint256 attribute) external {
 
         priceMint(attribute);
+
         _footballer.mint(attribute, msg.sender);
 
     }
 
     function TrainingNFT(uint256 nftID, uint256 difficult, uint256 multiplier) external returns (uint256 reward) {
 
-        require(multiplier > 0, "Error");
+        require(multiplier > 0, "Multiplier must be greater than 0 ");
 
         _footballer.Training(nftID, msg.sender, multiplier);
         
@@ -514,12 +546,11 @@ contract Operator is Context, Ownable {
     }
 
     function getTotalReward(address user) external view returns (uint256) {
+
         return rewardTraining[user];
     }
 
     function priceMint(uint256 attribute) private {
-
-        require(attribute < 3, "Error");
         
         if (attribute == 0) {
 
@@ -537,37 +568,39 @@ contract Operator is Context, Ownable {
 
         require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens to buy"); 
 
-        ERC20(_tokenReward).transferFrom(msg.sender, _TreasuryAddress , _price);    
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _price);    
          
 
     }
 
-    function buyEnery(uint256 nftID) external {
+    function buyEnergy(uint256 nftID) external {
 
-        require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens"); 
+        require(_isRecoveryEnergyOpen, "This feature has not been opened yet"); 
 
         (uint256 Attribute  , , ) = _footballer.getNFTInformation(nftID);
 
         if (Attribute == 0) {
 
-            _price = _commonPrice.div(2);
+            _energyPrice = _commonPrice.div(5);
 
         } else if (Attribute ==1) {
 
-            _price = _rarePrice.div(2);
+            _energyPrice = _rarePrice.div(5);
 
         } else {
 
-            _price = _legendaryPrice.div(2);
+            _energyPrice = _legendaryPrice.div(5);
             
         }
 
-        ERC20(_tokenReward).transferFrom(msg.sender, _TreasuryAddress , _price);   
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _energyPrice);   
 
-        _footballer.buyEnery(nftID);
+        _footballer.buyEnergy(nftID);
     }
 
     function claim() external {
+
+        require(rewardTraining[msg.sender] > 0, "You do not have any token to claim");
 
         uint256 amount;
 
@@ -619,7 +652,7 @@ contract Operator is Context, Ownable {
     
     function fightMonster(uint256 nftID, uint256 monsterID, uint256 multiplier) external returns (uint256 reward) {
 
-        require(multiplier > 0, "Error");
+        require(multiplier > 0, "Multiplier must be greater than 0 ");
 
         (  , , uint256 endTime) = _monster.getMonsterInformation(monsterID);
 
@@ -629,7 +662,7 @@ contract Operator is Context, Ownable {
 
         reward = _monster.caculatorReward(nftID, monsterID) * multiplier;
 
-        _pices.rewardPices(msg.sender);
+        _pieces.rewardPieces(msg.sender);
 
         rewardMonster[msg.sender] += reward;
 
@@ -648,11 +681,11 @@ contract Operator is Context, Ownable {
 
     }
 
-    function combine(uint256[] memory picesID) external {
+    function combine(uint256[] memory piecesID) external {
 
-        _footballer.transferFrom(msg.sender, _TreasuryAddress, _priceCombine);
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
 
-        _pices.combineShoesPices(picesID, msg.sender);
+        _pieces.combineShoesPieces(piecesID, msg.sender);
     }
 
     function manualsend() public onlyOwner()  {
@@ -664,4 +697,3 @@ contract Operator is Context, Ownable {
     receive() external payable {}
 
 }
-
