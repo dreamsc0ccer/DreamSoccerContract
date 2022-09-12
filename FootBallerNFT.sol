@@ -26,6 +26,7 @@ contract Footballer is ERC721, Ownable {
     address private _tokenReward;
 
     constructor() ERC721("Footballer", "NFT") {
+
         baseTokenURI = "";
 
     }
@@ -40,6 +41,8 @@ contract Footballer is ERC721, Ownable {
 
     function setNewTokenRewardAddress(address tokenReward) external onlyOperator() {
 
+         require(tokenReward != address(0), "Token address is not NULL address");
+
         _tokenReward = tokenReward;
     }
 
@@ -48,10 +51,14 @@ contract Footballer is ERC721, Ownable {
     }
 
     function operatorAddress() external view returns (address operator) {
+        
         operator = _operator;
     }
 
     function setOperator(address operator) external onlyOperator {
+
+        require(operator != address(0), "Operator address is not NULL address");
+
         _operator = operator;
     }
 
@@ -135,40 +142,14 @@ contract Footballer is ERC721, Ownable {
           
     }
 
-    function getNFTInformation1(uint256 nftID) external view returns (uint256 Attribute, uint256 Energy, uint256 lastestUpdate) {
+    function transferFrom(address from, address to, uint256 tokenId) public override {
 
-        Attribute = characters[nftID].attribute;
-          
-        if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
 
-            Energy = characters[nftID].currentEnergy;
+        characters[tokenId].owner = to;
 
-          } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
+        _transfer(from, to, tokenId);
 
-                characters[nftID].currentEnergy < 3 ? Energy = characters[nftID].currentEnergy + 1 : Energy = characters[nftID].currentEnergy;
-
-          } else if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
-
-                characters[nftID].currentEnergy > 0 ? Energy = 3 : Energy = 2;
-
-          } else if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
-
-                Energy = 3;
-
-          }
-
-        lastestUpdate = characters[nftID].lastestUpdate;
-          
-    }
-
-    function getNFTInformation2(uint256 nftID) external view returns (uint256 Attribute, uint256 Energy, uint256 lastestUpdate) {
-
-        Attribute = characters[nftID].attribute;
-
-        Energy = characters[nftID].currentEnergy;
-
-        lastestUpdate = characters[nftID].lastestUpdate;
-          
     }
 
     function _mint(uint256 attribute, address user) private {
@@ -183,7 +164,7 @@ contract Footballer is ERC721, Ownable {
 
     }
 
-    function buyEnery(uint nftID) external onlyOperator {
+    function buyEnergy(uint nftID) external onlyOperator {
 
         characters[nftID].currentEnergy = 3;
         characters[nftID].lastestUpdate = 0;
@@ -197,26 +178,21 @@ contract Footballer is ERC721, Ownable {
     
     function Training(uint256 nftID, address user, uint256 multiplier) external onlyOperator {
 
-      require(ownerOf(nftID) == user, "User have to owner of this NFT");      
+      require(ownerOf(nftID) == user, "User have to owner of this NFT");
 
       if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
 
            update0Energy(nftID, multiplier);
 
-        }  
-    
-      if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
+        }  else  if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
 
           update1Energy(nftID, multiplier);
 
-        }  
-        
-      if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
+        }  else if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
 
           update2Energy(nftID, multiplier);
 
-        }
-      if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
+        } else if (characters[nftID].lastestUpdate + 3 minutes < block.timestamp) { // 3 Energy
 
             characters[nftID].currentEnergy = 3 - multiplier;
 
@@ -227,28 +203,8 @@ contract Footballer is ERC721, Ownable {
 
     }
 
-    // function getEnergy(uint256 nftID) private view returns (uint256 Energy) {  
 
-    //     if (characters[nftID].lastestUpdate + 1 minutes > block.timestamp) { // 0 Energy
-
-    //         Energy = characters[nftID].currentEnergy;
-
-    //       } else if ((characters[nftID].lastestUpdate + 1 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 2 minutes > block.timestamp)) { // 1 Energy
-
-    //             characters[nftID].currentEnergy < 3 ? Energy = characters[nftID].currentEnergy + 1 : Energy = characters[nftID].currentEnergy;
-
-    //       } else if ((characters[nftID].lastestUpdate + 2 minutes < block.timestamp) && (characters[nftID].lastestUpdate + 3 minutes > block.timestamp)) { // 2 Energy
-
-    //             characters[nftID].currentEnergy > 0 ? Energy = 3 : Energy = 2;
-
-    //       } else { // 3 Energy
-
-    //             Energy = 3;
-
-    //       }
-    // }
-
-    function caculatorDifcult(uint256 difficult, address user) public view returns (uint256 diff) {
+    function caculatorDifcult(uint256 difficult, address user) private  view returns (uint256 diff) {
         bytes memory source;
 
         source = abi.encodePacked(
@@ -272,19 +228,19 @@ contract Footballer is ERC721, Ownable {
 
         difficult > 3 ? difficult = 2 : difficult = difficult;
 
-        uint256 bounus = ( 1 + difficult) * 10 ** 9 + caculatorDifcult(difficult, user) * 10 ** 8 ;
+        uint256 bonus = ( 1 + difficult) * 10 ** 9 + caculatorDifcult(difficult, user) * 10 ** 8 ;
 
         if (characters[nftID].attribute == 0) {
 
-            reward = 100 * bounus;
+            reward = 200 * bonus;
 
         } else if (characters[nftID].attribute == 1) {
 
-            reward = 200 * bounus;
+            reward = 1000 * bonus;
 
         } else {
 
-            reward = 500 * bounus;
+            reward = 1500 * bonus;
         }
         
 
