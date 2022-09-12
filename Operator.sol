@@ -429,8 +429,6 @@ contract Operator is Context, Ownable {
 
         _tokenReward = tokenReward;
 
-        _footballer.setNewTokenRewardAddress(tokenReward);
-
     }
 
     function setFootballerAddress(address footballer) external onlyOwner() {
