@@ -46,7 +46,7 @@ interface IPieces {
     
     function combineRareShoesPieces(uint256[] memory piecesID, address user) external;
     
-    function combineLegendShoesPieces(uint256[] memory piecesID, address user) external;
+    function combineLegendaryShoesPieces(uint256[] memory piecesID, address user) external;
 
 }
 
@@ -685,12 +685,27 @@ contract Operator is Context, Ownable {
 
     }
 
-    function combine(uint256[] memory piecesID) external {
+    function combineCommonShoes(uint256[] memory piecesID) external {
 
         ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
 
-        _pieces.combineShoesPieces(piecesID, msg.sender);
+        _pieces.combineCommonShoesPieces(piecesID, msg.sender);
     }
+
+    function combineRareShoes(uint256[] memory piecesID) external {
+
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
+
+        _pieces.combineRareShoesPieces(piecesID, msg.sender);
+    }
+
+    function combineLegendaryShoes(uint256[] memory piecesID) external {
+
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
+
+        _pieces.combineLegendaryShoesPieces(piecesID, msg.sender);
+    }
+
 
     function manualsend() public onlyOwner()  {
 
