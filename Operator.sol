@@ -42,7 +42,11 @@ interface IPieces {
 
     function rewardPieces(address user) external;
 
-    function combineShoesPieces(uint256[] memory piecesID, address user) external;
+    function combineCommonShoesPieces(uint256[] memory piecesID, address user) external;
+    
+    function combineRareShoesPieces(uint256[] memory piecesID, address user) external;
+    
+    function combineLegendShoesPieces(uint256[] memory piecesID, address user) external;
 
 }
 
