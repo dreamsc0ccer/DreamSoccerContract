@@ -7,76 +7,137 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+interface IShoes {
 
-
-interface IPieces {
+    function mint(address user, uint256 attribute) external;
 
 }
 
-contract ShoesNFT is ERC721, Ownable {
+contract PiecesNFT is ERC721, Ownable {
 
     using SafeMath for uint256;
 
     using Counters for Counters.Counter;
 
-    struct Shoes {
+    struct Pieces {
+
         uint256 attribute;
     }
 
-    Shoes[] public ShoesCollection;
+    Pieces[] public PiecesCollection;
 
     Counters.Counter private currentTokenId;
     
     string public baseTokenURI;
 
-    IPieces _pieces;
+    address _operator;
 
-    constructor() ERC721("Shoes", "NFT") {
+    IShoes _shoes;
+
+    constructor() ERC721("PiecesNFT", "NFT") {
 
         baseTokenURI = "";
 
     }
 
+    modifier onlyOperator() {
 
-    modifier onlyPices() {
-
-        require(owner() == _msgSender() || address(_pieces) == _msgSender(), "Caller is not the Piece");	
+        require(owner() == _msgSender() || _operator == _msgSender(), "Caller is not the Operator");	
 
         _;	
     }
 
+    function operatorAddress() external view returns (address operator) {
+        operator = _operator;
+    }
 
-    function setPices(address pices) external onlyPices {
+    function setOperator(address operator) external onlyOperator {
 
-        _pieces = IPieces(pices);
+        require(operator != address(0), "Operator address is not NULL address");
+        _operator = operator;
+    }
+
+    function setShoes(address shoes) external onlyOperator {
+
+        require(shoes != address(0), "Shoes address is not NULL address");
+        _shoes = IShoes(shoes);
     }
 
 
-    function Pices() external view returns (address) {
+    function Shoes() external view returns (address) {
 
-        return address(_pieces);
+        return address(_shoes);
         
     }
 
+    function getNFTPiecesInformation(uint256 piecesID) external view returns (uint256) {
 
-    function getShoesInformation(uint256 shoesID) external view returns (uint256) {
-
-        return ShoesCollection[shoesID].attribute;
+        return PiecesCollection[piecesID].attribute;
         
     }
 
-  function mint(address user, uint256 attr) external onlyPices() {
+    function rewardPieces(address user) external onlyOperator() {
 
-        uint256 newItemId = ShoesCollection.length;
+        uint256 newItemId = PiecesCollection.length;
 
-        uint256 attribute = attr;
+        uint256 attribute = uint(keccak256(abi.encodePacked(block.number, msg.sig))).mod(3);
 
-        ShoesCollection.push(Shoes(attribute));
+        PiecesCollection.push(Pieces(attribute));
 
         _safeMint(user, newItemId);
         
-  }
 
+    }
 
+    function combineCommonShoesPieces(uint256[] memory piecesID, address user) external onlyOperator() {
+
+        require(piecesID.length == 9, "Not Enough");
+
+        for (uint256 i = 0; i < piecesID.length; i++) {
+
+            require(ownerOf(piecesID[i]) == user, "You do not have this piece" );
+
+            require(PiecesCollection[i].attribute == PiecesCollection[i + 1].attribute, "Not same attribute");
+
+            transferFrom(user, 0x000000000000000000000000000000000000dEaD, piecesID[i]);
+        }
+
+        _shoes.mint(user, PiecesCollection[0].attribute);
+
+    }
+
+    function combineRareShoesPieces(uint256[] memory piecesID, address user) external onlyOperator() {
+
+        require(piecesID.length == 16, "Not Enough");
+
+        for (uint256 i = 0; i < piecesID.length; i++) {
+
+            require(ownerOf(piecesID[i]) == user, "You do not have this piece" );
+
+            require(PiecesCollection[i].attribute == PiecesCollection[i + 1].attribute, "Not same attribute");
+
+            transferFrom(user, 0x000000000000000000000000000000000000dEaD, piecesID[i]);
+        }
+
+        _shoes.mint(user, PiecesCollection[0].attribute);
+
+    }
+
+    function combineLegendaryShoesPieces(uint256[] memory piecesID, address user) external onlyOperator() {
+
+        require(piecesID.length == 25 , "Not Enough");
+
+        for (uint256 i = 0; i < piecesID.length; i++) {
+
+            require(ownerOf(piecesID[i]) == user, "You do not have this piece" );
+
+            require(PiecesCollection[i].attribute == PiecesCollection[i + 1].attribute, "Not same attribute");
+
+            transferFrom(user, 0x000000000000000000000000000000000000dEaD, piecesID[i]);
+        }
+
+        _shoes.mint(user, PiecesCollection[0].attribute);
+
+    }    
 
 }
