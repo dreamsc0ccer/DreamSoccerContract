@@ -146,13 +146,15 @@ contract Footballer is ERC721, Ownable {
 
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
 
+        require(balanceOf(to) < 3, "You can have maximum 3 Footballers");
+
         characters[tokenId].owner = to;
 
         _transfer(from, to, tokenId);
 
     }
 
-    function _mint(uint256 attribute, address user) private {
+    function _mintNFT(uint256 attribute, address user) private {
 
         uint256 newItemId = characters.length;
         uint256 currentEnergy = 3;
@@ -173,7 +175,9 @@ contract Footballer is ERC721, Ownable {
 
     function mint(uint256 attribute, address user) external onlyOperator {
 
-        _mint(attribute, user);
+        require(balanceOf(user) < 3, "You can have maximum 3 Footballers");
+
+        _mintNFT(attribute, user);
     }
     
     function Training(uint256 nftID, address user, uint256 multiplier) external onlyOperator {
