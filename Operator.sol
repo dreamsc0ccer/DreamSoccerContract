@@ -98,6 +98,7 @@ contract StakingDSoccer is Context, Ownable {
     function setTokenReward(address tokenReward) external onlyOwner {
 
         require(tokenReward != address(0), "Token Reward address is not NULL address");
+
         _tokenReward = tokenReward;
     }
 
@@ -572,7 +573,7 @@ contract Operator is Context, Ownable {
 
         require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens to buy"); 
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _price);    
+        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD, _price);    
          
 
     }
@@ -597,7 +598,7 @@ contract Operator is Context, Ownable {
             
         }
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _energyPrice);   
+        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _energyPrice);   
 
         _footballer.buyEnergy(nftID);
     }
@@ -687,21 +688,21 @@ contract Operator is Context, Ownable {
 
     function combineCommonShoes(uint256[] memory piecesID) external {
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
+        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _priceCombine);
 
         _pieces.combineCommonShoesPieces(piecesID, msg.sender);
     }
 
     function combineRareShoes(uint256[] memory piecesID) external {
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
+        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _priceCombine);
 
         _pieces.combineRareShoesPieces(piecesID, msg.sender);
     }
 
     function combineLegendaryShoes(uint256[] memory piecesID) external {
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
+        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _priceCombine);
 
         _pieces.combineLegendaryShoesPieces(piecesID, msg.sender);
     }
