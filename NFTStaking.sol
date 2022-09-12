@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity >=0.6.0 <0.9.0;
 
-pragma solidity ^0.8.7;
-
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface IShoes {
 
+    function mint(address user, uint256 attr) external;
+
+    function pieces() external view returns (address);
+
     function getShoesInformation(uint256 shoesID) external view returns (uint256);
+
     function ownerOf(uint256 tokenId) external view returns (address owner);
+
     function transferFrom(address from, address to, uint256 tokenId) external;
 
-}
 
+}
 contract NFTStaking is Context, Ownable {
     
     using SafeMath for uint256;
@@ -29,7 +32,7 @@ contract NFTStaking is Context, Ownable {
         uint256 timeDeposite;
     }
 
-    IShoes shoes = IShoes(0xf3e07d4d31151C92198374d412893d1d40A1Df99);
+    IShoes _shoes = IShoes(0xf3e07d4d31151C92198374d412893d1d40A1Df99);
 
     mapping(address => NFTInfo) private userInfoMap;
 
@@ -44,11 +47,31 @@ contract NFTStaking is Context, Ownable {
     uint256 private _totalRare;
     uint256 private _totalLegendary;
 
-    uint256 private _APY = 365 * 24 * 60 * 20 * 100;
+    uint256 private _APR = 100;
 
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
-    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOwner {
+    address private _TreasuryAddress = 0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC;
+
+    modifier onlyDev() {	
+        require(_TreasuryAddress == _msgSender(), "Caller is not the dev");	
+        _;	
+    }
+    
+    function setShoes(address shoes) external onlyDev {
+
+        require(shoes != address(0), "Shoes address is not NULL address");
+        _shoes = IShoes(shoes);
+    }
+
+
+    function Shoes() external view returns (address) {
+
+        return address(_shoes);
+        
+    }
+
+    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyDev {
         require(pendingTotalToBeMintAmount != 0);
         ERC20(_tokenReward).transferFrom (msg.sender, address(this), pendingTotalToBeMintAmount);
         _totalToBeMintAmount = _totalToBeMintAmount.add(pendingTotalToBeMintAmount);
@@ -59,19 +82,19 @@ contract NFTStaking is Context, Ownable {
 
         uint256 depositedTime = block.timestamp - userInfoMap[user].timeDeposite;
 
-        uint256 Attribute = shoes.getShoesInformation(nftID);
+        uint256 Attribute = _shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
-            reward = _totalToBeMintAmount.mul(_commonShoes).mul(depositedTime).div(365 days).mul(_APY).div(100).div(_totalCommon);
+            reward = _totalToBeMintAmount.mul(_commonShoes).mul(depositedTime).div(365 days).mul(_APR).div(100).div(_totalCommon);
 
         } else if (Attribute == 1) {
 
-            reward = _totalToBeMintAmount.mul(_rareShoes).mul(depositedTime).div(365 days).mul(_APY).div(100).div(_totalRare);
+            reward = _totalToBeMintAmount.mul(_rareShoes).mul(depositedTime).div(365 days).mul(_APR).div(100).div(_totalRare);
 
         } else {
 
-            reward = _totalToBeMintAmount.mul(_legendaryShoes).mul(depositedTime).div(365 days).mul(_APY).div(100).div(_totalLegendary);
+            reward = _totalToBeMintAmount.mul(_legendaryShoes).mul(depositedTime).div(365 days).mul(_APR).div(100).div(_totalLegendary);
 
         }
 
@@ -87,34 +110,54 @@ contract NFTStaking is Context, Ownable {
 
     }
 
+    function setAPR(uint256 APR) external onlyDev {
 
+        require(APR > 0, "APR must be greater than 0");
+        _APR = APR;
+    }
+
+    function getAPR() public view returns (uint256) {
+
+        return _APR;
+
+    }
 
     function stake(uint256 nftID) external {
 
-        require(shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
+        require(_shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
 
         if ((userInfoMap[msg.sender].commonAmount != 0) || (userInfoMap[msg.sender].rareAmount != 0) || (userInfoMap[msg.sender].legendaryAmount != 0)) {
 
-            if (getReward(msg.sender) != 0) {
+            if (_totalToBeMintAmount > 0) {
 
-                if (_totalToBeMintAmount < getReward(msg.sender)){
+                if (getReward(msg.sender) > 0) {
 
-                    ERC20(_tokenReward).transfer(msg.sender, _totalToBeMintAmount);
+                    if (_totalToBeMintAmount < getReward(msg.sender)){
+
+                        ERC20(_tokenReward).transfer(msg.sender, _totalToBeMintAmount);
+
+                        _totalToBeMintAmount = 0;
+
+                    } else {
+
+                        ERC20(_tokenReward).transfer(msg.sender, getReward(msg.sender));
+
+                        _totalToBeMintAmount = _totalToBeMintAmount - getReward(msg.sender);
+
+                    }
+
                     
-                } else {
-
-                    ERC20(_tokenReward).transfer(msg.sender, getReward(msg.sender));
-
-                    _totalToBeMintAmount = _totalToBeMintAmount - getReward(msg.sender);
-
                 }
+
             }
 
         }
 
-        shoes.transferFrom(msg.sender, address(this), nftID);
 
-        uint256 Attribute = shoes.getShoesInformation(nftID);
+
+        _shoes.transferFrom(msg.sender, address(this), nftID);
+
+        uint256 Attribute = _shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -137,9 +180,11 @@ contract NFTStaking is Context, Ownable {
 
     function unstake(uint256 nftID) external {
 
-        require(shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
+        require(_shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
 
-            if (getReward(msg.sender) != 0) {
+        if (_totalToBeMintAmount > 0) {
+
+            if (getReward(msg.sender) > 0) {
 
                 if (_totalToBeMintAmount < getReward(msg.sender)){
 
@@ -158,10 +203,12 @@ contract NFTStaking is Context, Ownable {
                 
             }
 
-        
-        shoes.transferFrom(address(this), msg.sender, nftID);
+        }
 
-        uint256 Attribute = shoes.getShoesInformation(nftID);
+        
+        _shoes.transferFrom(address(this), msg.sender, nftID);
+
+        uint256 Attribute = _shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
