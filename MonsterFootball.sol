@@ -60,8 +60,18 @@ contract MonsterFootball is ERC721, Ownable {
 
     function setFootballerAddress(address footballer) external onlyOperator {
 
+         require(footballer != address(0), "Footballer address is not NULL address");
+
+
         _footballer = IFootballer(footballer);
         
+    }
+
+    function setOperator(address operator) external onlyOperator {
+
+        require(operator != address(0), "Operator address is not NULL address");
+
+        _operator = operator;
     }
 
     function footballerAddress() external view returns (address footballer) {
@@ -72,9 +82,6 @@ contract MonsterFootball is ERC721, Ownable {
         operator = _operator;
     }
 
-    function setOperator(address operator) external onlyOperator {
-        _operator = operator;
-    }
 
     function callMonster() external onlyOperator {
 
@@ -104,19 +111,19 @@ contract MonsterFootball is ERC721, Ownable {
 
         difficult > 3 ? difficult = 2 : difficult = difficult;
 
-        uint256 bounus = ( 1 + difficult) * uint(keccak256(abi.encodePacked(block.number))).mod(3) * 10 ** 8;
+        uint256 bonus = ( 1 + difficult) * uint(keccak256(abi.encodePacked(block.number))).mod(3) * 10 ** 8;
 
         if (Attribute == 0) {
 
-            reward = 100 * 2 * bounus;
+            reward = 200 * 2 * bonus;
 
         } else if (Attribute == 1) {
 
-            reward = 200 * 2 * bounus;
+            reward = 1000 * 2 * bonus;
 
         } else {
 
-            reward = 500 * 2 * bounus;
+            reward = 1500 * 2 * bonus;
         }
         
 
