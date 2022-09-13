@@ -112,7 +112,7 @@ contract StakingDSoccer is Context, Ownable {
 
     function getReward(address user) public view returns (uint256) {
 
-        uint256 depositedTime = block.timestamp - _userInfoMap[msg.sender]._timeDeposite;
+        uint256 depositedTime = block.timestamp - _userInfoMap[user]._timeDeposite;
 
         return _userInfoMap[user]._amountDeposite.mul(depositedTime).div(365 days).mul(_APR).div(100);
 
