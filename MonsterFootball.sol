@@ -34,7 +34,7 @@ contract MonsterFootball is ERC721, Ownable {
         uint256 endTime;
     }
 
-    IFootballer _footballer;
+    IFootballer _footballer = IFootballer(0xD0B7405e21576B9B5466c355E2d6A117c32bc068);
 
     Monster[] public Monsters;
 
@@ -42,7 +42,7 @@ contract MonsterFootball is ERC721, Ownable {
     
     string public baseTokenURI;
 
-    address _operator;
+    address _operator = 0x829E64a5Ff6F272cc00c8551dCE1A30654a3AFA4;
 
     constructor() ERC721("Monster", "NFT") {
 
@@ -83,14 +83,16 @@ contract MonsterFootball is ERC721, Ownable {
     }
 
 
-    function callMonster() external onlyOperator {
+    function callMonster() external onlyOperator returns (uint256) {
 
         uint256 newItemId = Monsters.length;
         uint256 difficult = uint(keccak256(abi.encodePacked(block.number))).mod(3);
         uint256 startTime = block.timestamp;
-        uint256 endTime = startTime + 5 minutes;
+        uint256 endTime = startTime + 24 hours;
         Monsters.push(Monster(difficult, startTime, endTime));
         _safeMint(0x000000000000000000000000000000000000dEaD, newItemId);
+
+        return newItemId;
 
     }
     
