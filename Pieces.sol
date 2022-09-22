@@ -30,9 +30,9 @@ contract PiecesNFT is ERC721, Ownable {
     
     string public baseTokenURI;
 
-    address _operator;
+    address _operator = 0x829E64a5Ff6F272cc00c8551dCE1A30654a3AFA4;
 
-    IShoes _shoes;
+    IShoes _shoes = IShoes(0xA9ad5F2151eC2F55578eF7ab8982c78A2C842230);
 
     constructor() ERC721("PiecesNFT", "NFT") {
 
@@ -76,7 +76,7 @@ contract PiecesNFT is ERC721, Ownable {
         
     }
 
-    function rewardPieces(address user) external onlyOperator() {
+    function rewardPieces(address user) external onlyOperator() returns (uint256) {
 
         uint256 newItemId = PiecesCollection.length;
 
@@ -85,6 +85,8 @@ contract PiecesNFT is ERC721, Ownable {
         PiecesCollection.push(Pieces(attribute));
 
         _safeMint(user, newItemId);
+
+        return  newItemId;
         
 
     }
