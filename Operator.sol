@@ -30,7 +30,7 @@ interface IMonsterFootball {
 
     function caculatorReward(uint256 nftID, uint256 monsterID) external view returns (uint256 reward);
 
-    function callMonster() external;
+    function callMonster() external returns (uint256);
 
 }
 
@@ -40,13 +40,9 @@ interface IPieces {
 
     function getNFTPiecesInformation(uint256 piecesID) external view returns (uint256);
 
-    function rewardPieces(address user) external;
+    function rewardPieces(address user) external returns (uint256);
 
-    function combineCommonShoesPieces(uint256[] memory piecesID, address user) external;
-    
-    function combineRareShoesPieces(uint256[] memory piecesID, address user) external;
-    
-    function combineLegendaryShoesPieces(uint256[] memory piecesID, address user) external;
+    function combineShoesPieces(uint256[] memory piecesID, address user) external;
 
 }
 
@@ -81,38 +77,29 @@ contract StakingDSoccer is Context, Ownable {
 
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
-    address private _TreasuryAddress = 0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC;
-
-    modifier onlyDev() {	
-        require(_TreasuryAddress == _msgSender(), "Caller is not the dev");	
-        _;	
-    }
-    
-
-    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyDev {
+    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOwner {
         require(pendingTotalToBeMintAmount != 0);
         ERC20(_tokenReward).transferFrom (msg.sender, address(this), pendingTotalToBeMintAmount);
         _totalToBeMintAmount = _totalToBeMintAmount.add(pendingTotalToBeMintAmount);
         emit AddTotalToBeMintAmount(msg.sender, pendingTotalToBeMintAmount, _totalToBeMintAmount);
     }
 
-    function setAPR(uint256 APR) external onlyDev {
+    function setAPR(uint256 APR) external onlyOwner {
 
         require(APR > 0, "APR must be greater than 0");
 
         _APR = APR;
     }
 
-    function setTokenReward(address tokenReward) external onlyDev {
+    function setTokenReward(address tokenReward) external onlyOwner {
 
         require(tokenReward != address(0), "Token Reward address is not NULL address");
-
         _tokenReward = tokenReward;
     }
 
     function getReward(address user) public view returns (uint256) {
 
-        uint256 depositedTime = block.timestamp - _userInfoMap[user]._timeDeposite;
+        uint256 depositedTime = block.timestamp - _userInfoMap[msg.sender]._timeDeposite;
 
         return _userInfoMap[user]._amountDeposite.mul(depositedTime).div(365 days).mul(_APR).div(100);
 
@@ -144,22 +131,19 @@ contract StakingDSoccer is Context, Ownable {
     }
 
     function stake(uint256 amount) external {
-
         require(amount > 0, "Can not stake 0 token");
 
         require(ERC20(_tokenReward).balanceOf(msg.sender) >= amount, "You do not have enough tokens to stake");
 
 
-        if (_totalToBeMintAmount > 0) {
+        if (_userInfoMap[msg.sender]._amountDeposite != 0) {
 
-            if (getReward(msg.sender) > 0) {
+            if (getReward(msg.sender) != 0) {
 
                 if (_totalToBeMintAmount < getReward(msg.sender)){
 
                     ERC20(_tokenReward).transfer(msg.sender, _totalToBeMintAmount);
-
-                    _totalToBeMintAmount = 0;
-
+                    
                 } else {
 
                     ERC20(_tokenReward).transfer(msg.sender, getReward(msg.sender));
@@ -167,8 +151,6 @@ contract StakingDSoccer is Context, Ownable {
                     _totalToBeMintAmount = _totalToBeMintAmount - getReward(msg.sender);
 
                 }
-
-                
             }
 
         }
@@ -188,10 +170,9 @@ contract StakingDSoccer is Context, Ownable {
 
         require(_userInfoMap[msg.sender]._amountDeposite >= amount, "You do not have enough tokens to unstake");
 
-        if (_totalToBeMintAmount > 0) {
+        if (_userInfoMap[msg.sender]._amountDeposite != 0) {
 
-            if (getReward(msg.sender) > 0) {
-
+            if (getReward(msg.sender) != 0) {
                 if (_totalToBeMintAmount < getReward(msg.sender)){
 
                     ERC20(_tokenReward).transfer(msg.sender, _totalToBeMintAmount);
@@ -231,7 +212,7 @@ contract NFTStaking is Context, Ownable {
         uint256 timeDeposite;
     }
 
-    IShoes _shoes = IShoes(0xf3e07d4d31151C92198374d412893d1d40A1Df99);
+    IShoes shoes = IShoes(0xf3e07d4d31151C92198374d412893d1d40A1Df99);
 
     mapping(address => NFTInfo) private userInfoMap;
 
@@ -250,27 +231,7 @@ contract NFTStaking is Context, Ownable {
 
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
-    address private _TreasuryAddress = 0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC;
-
-    modifier onlyDev() {	
-        require(_TreasuryAddress == _msgSender(), "Caller is not the dev");	
-        _;	
-    }
-    
-    function setShoes(address shoes) external onlyDev {
-
-        require(shoes != address(0), "Shoes address is not NULL address");
-        _shoes = IShoes(shoes);
-    }
-
-
-    function Shoes() external view returns (address) {
-
-        return address(_shoes);
-        
-    }
-
-    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyDev {
+    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOwner {
         require(pendingTotalToBeMintAmount != 0);
         ERC20(_tokenReward).transferFrom (msg.sender, address(this), pendingTotalToBeMintAmount);
         _totalToBeMintAmount = _totalToBeMintAmount.add(pendingTotalToBeMintAmount);
@@ -281,7 +242,7 @@ contract NFTStaking is Context, Ownable {
 
         uint256 depositedTime = block.timestamp - userInfoMap[user].timeDeposite;
 
-        uint256 Attribute = _shoes.getShoesInformation(nftID);
+        uint256 Attribute = shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -309,9 +270,7 @@ contract NFTStaking is Context, Ownable {
 
     }
 
-    function setAPR(uint256 APR) external onlyDev {
-
-        require(APR > 0, "APR must be greater than 0");
+    function setAPR(uint256 APR) external onlyOwner {
         _APR = APR;
     }
 
@@ -323,40 +282,30 @@ contract NFTStaking is Context, Ownable {
 
     function stake(uint256 nftID) external {
 
-        require(_shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
+        require(shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
 
         if ((userInfoMap[msg.sender].commonAmount != 0) || (userInfoMap[msg.sender].rareAmount != 0) || (userInfoMap[msg.sender].legendaryAmount != 0)) {
 
-            if (_totalToBeMintAmount > 0) {
+            if (getReward(msg.sender) != 0) {
 
-                if (getReward(msg.sender) > 0) {
+                if (_totalToBeMintAmount < getReward(msg.sender)){
 
-                    if (_totalToBeMintAmount < getReward(msg.sender)){
-
-                        ERC20(_tokenReward).transfer(msg.sender, _totalToBeMintAmount);
-
-                        _totalToBeMintAmount = 0;
-
-                    } else {
-
-                        ERC20(_tokenReward).transfer(msg.sender, getReward(msg.sender));
-
-                        _totalToBeMintAmount = _totalToBeMintAmount - getReward(msg.sender);
-
-                    }
-
+                    ERC20(_tokenReward).transfer(msg.sender, _totalToBeMintAmount);
                     
-                }
+                } else {
 
+                    ERC20(_tokenReward).transfer(msg.sender, getReward(msg.sender));
+
+                    _totalToBeMintAmount = _totalToBeMintAmount - getReward(msg.sender);
+
+                }
             }
 
         }
 
+        shoes.transferFrom(msg.sender, address(this), nftID);
 
-
-        _shoes.transferFrom(msg.sender, address(this), nftID);
-
-        uint256 Attribute = _shoes.getShoesInformation(nftID);
+        uint256 Attribute = shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -379,11 +328,9 @@ contract NFTStaking is Context, Ownable {
 
     function unstake(uint256 nftID) external {
 
-        require(_shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
+        require(shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
 
-        if (_totalToBeMintAmount > 0) {
-
-            if (getReward(msg.sender) > 0) {
+            if (getReward(msg.sender) != 0) {
 
                 if (_totalToBeMintAmount < getReward(msg.sender)){
 
@@ -402,12 +349,10 @@ contract NFTStaking is Context, Ownable {
                 
             }
 
-        }
-
         
-        _shoes.transferFrom(address(this), msg.sender, nftID);
+        shoes.transferFrom(address(this), msg.sender, nftID);
 
-        uint256 Attribute = _shoes.getShoesInformation(nftID);
+        uint256 Attribute = shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -478,6 +423,8 @@ contract Operator is Context, Ownable {
         require(tokenReward != address(0), "Token Reward address is not NULL address");
 
         _tokenReward = tokenReward;
+
+        _footballer.setNewTokenRewardAddress(tokenReward);
 
     }
 
@@ -621,7 +568,7 @@ contract Operator is Context, Ownable {
 
         require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens to buy"); 
 
-        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD, _price);    
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _price);    
          
 
     }
@@ -646,7 +593,7 @@ contract Operator is Context, Ownable {
             
         }
 
-        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _energyPrice);   
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _energyPrice);   
 
         _footballer.buyEnergy(nftID);
     }
@@ -699,11 +646,13 @@ contract Operator is Context, Ownable {
         return rewardMonster[user];
     }
 
-    function callMonster() external onlyOwner {
-        _monster.callMonster();
+    function callMonster() external onlyOwner returns (uint256 monsterID) {
+        monsterID = _monster.callMonster();
+
+        
     }
     
-    function fightMonster(uint256 nftID, uint256 monsterID, uint256 multiplier) external returns (uint256 reward) {
+    function fightMonster(uint256 nftID, uint256 monsterID, uint256 multiplier) external returns (uint256 reward, uint256 piecesID) {
 
         require(multiplier > 0, "Multiplier must be greater than 0 ");
 
@@ -715,7 +664,7 @@ contract Operator is Context, Ownable {
 
         reward = _monster.caculatorReward(nftID, monsterID) * multiplier;
 
-        _pieces.rewardPieces(msg.sender);
+        piecesID = _pieces.rewardPieces(msg.sender);
 
         rewardMonster[msg.sender] += reward;
 
@@ -734,27 +683,12 @@ contract Operator is Context, Ownable {
 
     }
 
-    function combineCommonShoes(uint256[] memory piecesID) external {
+    function combine(uint256[] memory piecesID) external {
 
-        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _priceCombine);
+        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
 
-        _pieces.combineCommonShoesPieces(piecesID, msg.sender);
+        _pieces.combineShoesPieces(piecesID, msg.sender);
     }
-
-    function combineRareShoes(uint256[] memory piecesID) external {
-
-        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _priceCombine);
-
-        _pieces.combineRareShoesPieces(piecesID, msg.sender);
-    }
-
-    function combineLegendaryShoes(uint256[] memory piecesID) external {
-
-        ERC20(_tokenReward).transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD , _priceCombine);
-
-        _pieces.combineLegendaryShoesPieces(piecesID, msg.sender);
-    }
-
 
     function manualsend() public onlyOwner()  {
 
