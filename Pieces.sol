@@ -36,7 +36,7 @@ contract PiecesNFT is ERC721, Ownable {
 
     constructor() ERC721("PiecesNFT", "NFT") {
 
-        baseTokenURI = "";
+        baseTokenURI = "https://nft.dreamsoccer.co/pieces/metadata/";
 
     }
 
@@ -74,6 +74,14 @@ contract PiecesNFT is ERC721, Ownable {
 
         return PiecesCollection[piecesID].attribute;
         
+    }
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseTokenURI;
+    }
+
+    function setBaseTokenURI(string memory _baseTokenURI) public {
+        baseTokenURI = _baseTokenURI;
     }
 
     function rewardPieces(address user) external onlyOperator() returns (uint256) {
