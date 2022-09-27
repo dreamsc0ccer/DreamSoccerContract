@@ -418,13 +418,13 @@ contract Operator is Context, Ownable {
 
     address payable private _TreasuryAddress = payable(0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC);
 
+    address constant public DEAD = 0x000000000000000000000000000000000000dEaD;
+
     function setNewTokenRewardAddress(address tokenReward) external onlyOwner() {
 
         require(tokenReward != address(0), "Token Reward address is not NULL address");
 
         _tokenReward = tokenReward;
-
-        _footballer.setNewTokenRewardAddress(tokenReward);
 
     }
 
@@ -568,7 +568,7 @@ contract Operator is Context, Ownable {
 
         require(ERC20(_tokenReward).balanceOf(msg.sender) >= _price, "You are not enough tokens to buy"); 
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _price);    
+        ERC20(_tokenReward).transferFrom(msg.sender, DEAD , _price);    
          
 
     }
@@ -593,7 +593,7 @@ contract Operator is Context, Ownable {
             
         }
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _energyPrice);   
+        ERC20(_tokenReward).transferFrom(msg.sender, DEAD , _energyPrice);   
 
         _footballer.buyEnergy(nftID);
     }
@@ -685,7 +685,7 @@ contract Operator is Context, Ownable {
 
     function combine(uint256[] memory piecesID) external {
 
-        ERC20(_tokenReward).transferFrom(msg.sender, address(0) , _priceCombine);
+        ERC20(_tokenReward).transferFrom(msg.sender, DEAD , _priceCombine);
 
         _pieces.combineShoesPieces(piecesID, msg.sender);
     }
