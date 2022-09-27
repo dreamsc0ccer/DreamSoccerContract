@@ -12,7 +12,7 @@ contract Footballer is ERC721, Ownable {
 
     using SafeMath for uint256;
 
-    address _operator = 0x9d9EA6FFf3915f08B7269984C6b6B0916A33eD29;
+    address _operator;
 
     struct Character {
         uint256 attribute;
@@ -25,9 +25,9 @@ contract Footballer is ERC721, Ownable {
 
     address private _tokenReward;
 
-    constructor() ERC721("Footballer", "NFT") {
+    constructor() ERC721("Footballer", "FootballerNFT") {
 
-        baseTokenURI = "";
+        baseTokenURI = "https://nft.dreamsoccer.co/metadata/";
 
     }
     
@@ -65,6 +65,14 @@ contract Footballer is ERC721, Ownable {
     function appendString(string memory a,string memory b) public pure returns (string memory){
         return string(abi.encodePacked(a,' ',b));
     } 
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseTokenURI;
+    }
+
+    function setBaseTokenURI(string memory _baseTokenURI) public {
+        baseTokenURI = _baseTokenURI;
+    }
 
     function getAllFootballerbyOwner(address user) external view returns (string memory nftID) {
 
