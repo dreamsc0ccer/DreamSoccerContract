@@ -71,30 +71,56 @@ contract StakingDSoccer is Context, Ownable {
 
     mapping(address => UserInfo) private _userInfoMap;
 
-    address private _tokenReward;
+    address private _tokenReward = 0x3761493C189F9c5483302d823CFfE8108c21d668;
     uint256 private _totalToBeMintAmount;
     uint256 private _APR = 100;
 
+    address _operator = 0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC;
+
+
+    modifier onlyOperator() {
+
+        require(owner() == _msgSender() || _operator == _msgSender(), "Caller is not the Operator");	
+
+        _;	
+    }
+
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
-    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOwner {
+    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOperator {
         require(pendingTotalToBeMintAmount != 0);
         ERC20(_tokenReward).transferFrom (msg.sender, address(this), pendingTotalToBeMintAmount);
         _totalToBeMintAmount = _totalToBeMintAmount.add(pendingTotalToBeMintAmount);
         emit AddTotalToBeMintAmount(msg.sender, pendingTotalToBeMintAmount, _totalToBeMintAmount);
     }
 
-    function setAPR(uint256 APR) external onlyOwner {
+    function setAPR(uint256 APR) external onlyOperator {
 
         require(APR > 0, "APR must be greater than 0");
 
         _APR = APR;
     }
 
-    function setTokenReward(address tokenReward) external onlyOwner {
+    function operatorAddress() external view returns (address operator) {
+        
+        operator = _operator;
+    }
+
+    function setOperator(address operator) external onlyOperator {
+
+        require(operator != address(0), "Operator address is not NULL address");
+
+        _operator = operator;
+    }
+    
+    function setTokenReward(address tokenReward) external onlyOperator {
 
         require(tokenReward != address(0), "Token Reward address is not NULL address");
         _tokenReward = tokenReward;
+    }
+
+    function TokenReward() public view returns (address) {
+        return _tokenReward;
     }
 
     function getReward(address user) public view returns (uint256) {
@@ -212,11 +238,11 @@ contract NFTStaking is Context, Ownable {
         uint256 timeDeposite;
     }
 
-    IShoes shoes = IShoes(0xf3e07d4d31151C92198374d412893d1d40A1Df99);
+    IShoes _shoes;
 
     mapping(address => NFTInfo) private userInfoMap;
 
-    address private _tokenReward;
+    address private _tokenReward = 0x3761493C189F9c5483302d823CFfE8108c21d668;
     uint256 private _totalToBeMintAmount;
 
     uint256 private _commonShoes = 2;
@@ -229,20 +255,48 @@ contract NFTStaking is Context, Ownable {
 
     uint256 private _APR = 100;
 
+    address _operator = 0xd10Aa221f817d98F3f8A33dB67D363e9FE3627BC;
+
     event AddTotalToBeMintAmount(address indexed user, uint256 pendingTotalToBeMintAmount, uint256 totalToBeMintAmount);
 
-    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOwner {
+    modifier onlyOperator() {
+
+        require(owner() == _msgSender() || _operator == _msgSender(), "Caller is not the Operator");	
+
+        _;	
+    }
+
+    function operatorAddress() external view returns (address operator) {
+        
+        operator = _operator;
+    }
+
+    function setOperator(address operator) external onlyOperator {
+
+        require(operator != address(0), "Operator address is not NULL address");
+
+        _operator = operator;
+    }
+    function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOperator {
         require(pendingTotalToBeMintAmount != 0);
         ERC20(_tokenReward).transferFrom (msg.sender, address(this), pendingTotalToBeMintAmount);
         _totalToBeMintAmount = _totalToBeMintAmount.add(pendingTotalToBeMintAmount);
         emit AddTotalToBeMintAmount(msg.sender, pendingTotalToBeMintAmount, _totalToBeMintAmount);
     }
 
+    function setShoesAddress(address shoes) external onlyOwner() {
+
+        require(shoes != address(0), "Shoes address is not NULL address");
+
+        _shoes = IShoes(shoes);
+        
+    }
+
     function getRewardPerShoes(uint256 nftID, address user) public view returns (uint256 reward) {
 
         uint256 depositedTime = block.timestamp - userInfoMap[user].timeDeposite;
 
-        uint256 Attribute = shoes.getShoesInformation(nftID);
+        uint256 Attribute = _shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -280,9 +334,21 @@ contract NFTStaking is Context, Ownable {
 
     }
 
+
+    function setTokenReward(address tokenReward) external onlyOperator {
+
+        require(tokenReward != address(0), "Token Reward address is not NULL address");
+        _tokenReward = tokenReward;
+    }
+
+    function TokenReward() public view returns (address) {
+        return _tokenReward;
+    }
+
+
     function stake(uint256 nftID) external {
 
-        require(shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
+        require(_shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
 
         if ((userInfoMap[msg.sender].commonAmount != 0) || (userInfoMap[msg.sender].rareAmount != 0) || (userInfoMap[msg.sender].legendaryAmount != 0)) {
 
@@ -303,9 +369,9 @@ contract NFTStaking is Context, Ownable {
 
         }
 
-        shoes.transferFrom(msg.sender, address(this), nftID);
+        _shoes.transferFrom(msg.sender, address(this), nftID);
 
-        uint256 Attribute = shoes.getShoesInformation(nftID);
+        uint256 Attribute = _shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -328,7 +394,7 @@ contract NFTStaking is Context, Ownable {
 
     function unstake(uint256 nftID) external {
 
-        require(shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
+        require(_shoes.ownerOf(nftID) == msg.sender, "User have to owner of this NFT"); 
 
             if (getReward(msg.sender) != 0) {
 
@@ -350,9 +416,9 @@ contract NFTStaking is Context, Ownable {
             }
 
         
-        shoes.transferFrom(address(this), msg.sender, nftID);
+        _shoes.transferFrom(address(this), msg.sender, nftID);
 
-        uint256 Attribute = shoes.getShoesInformation(nftID);
+        uint256 Attribute = _shoes.getShoesInformation(nftID);
 
         if (Attribute == 0) {
 
@@ -380,7 +446,7 @@ contract Operator is Context, Ownable {
 
     using SafeMath for uint256;
 
-    address private _tokenReward;
+    address private _tokenReward = 0x3761493C189F9c5483302d823CFfE8108c21d668;
 
     StakingDSoccer private _stakingDSoccer = new StakingDSoccer();
 
@@ -543,9 +609,8 @@ contract Operator is Context, Ownable {
             isClaimed[msg.sender] == true;
 
         }
-
-        emit RewardTrainingNFT(reward);
         
+        emit RewardTrainingNFT(reward);
 
     }
 
