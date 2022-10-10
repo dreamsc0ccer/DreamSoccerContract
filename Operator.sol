@@ -524,6 +524,8 @@ contract Operator is Context, Ownable {
 
     }
 
+    event RewardTrainingNFT(uint256 reward);
+
     function TrainingNFT(uint256 nftID, uint256 difficult, uint256 multiplier) external returns (uint256 reward) {
 
         require(multiplier > 0, "Multiplier must be greater than 0 ");
@@ -541,6 +543,8 @@ contract Operator is Context, Ownable {
             isClaimed[msg.sender] == true;
 
         }
+
+        emit RewardTrainingNFT(reward);
         
 
     }
@@ -652,6 +656,8 @@ contract Operator is Context, Ownable {
         
     }
     
+    event RewardFightMonster(uint256 reward, uint256 piecesID);
+
     function fightMonster(uint256 nftID, uint256 monsterID, uint256 multiplier) external returns (uint256 reward, uint256 piecesID) {
 
         require(multiplier > 0, "Multiplier must be greater than 0 ");
@@ -668,6 +674,7 @@ contract Operator is Context, Ownable {
 
         rewardMonster[msg.sender] += reward;
 
+        emit RewardFightMonster(reward, piecesID);
 
     }
     
