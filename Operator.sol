@@ -113,6 +113,16 @@ contract StakingDSoccer is Context, Ownable {
         _operator = operator;
     }
     
+    function updateNewStaking(address newStaking) external onlyOperator()  {
+
+        require(newStaking != address(0), "Staking address is not NULL address");
+
+        uint256 balanceToken = ERC20(_tokenReward).balanceOf(address(this));
+
+        ERC20(_tokenReward).transfer(newStaking, balanceToken);
+
+    }
+
     function setTokenReward(address tokenReward) external onlyOperator {
 
         require(tokenReward != address(0), "Token Reward address is not NULL address");
@@ -125,7 +135,7 @@ contract StakingDSoccer is Context, Ownable {
 
     function getReward(address user) public view returns (uint256) {
 
-        uint256 depositedTime = block.timestamp - _userInfoMap[msg.sender]._timeDeposite;
+        uint256 depositedTime = block.timestamp - _userInfoMap[user]._timeDeposite;
 
         return _userInfoMap[user]._amountDeposite.mul(depositedTime).div(365 days).mul(_APR).div(100);
 
@@ -277,14 +287,25 @@ contract NFTStaking is Context, Ownable {
 
         _operator = operator;
     }
+
+    function updateNewNFTStaking(address newNFTStaking) external onlyOperator()  {
+
+        require(newNFTStaking != address(0), "NFTStaking address is not NULL address");
+
+        uint256 balanceToken = ERC20(_tokenReward).balanceOf(address(this));
+
+        ERC20(_tokenReward).transfer(newNFTStaking, balanceToken);
+
+    }
+
     function addTotalToBeMintAmount(uint256 pendingTotalToBeMintAmount) external onlyOperator {
-        require(pendingTotalToBeMintAmount != 0);
+        require(pendingTotalToBeMintAmount != 0, "Total to be mint amount must be greater than 0");
         ERC20(_tokenReward).transferFrom (msg.sender, address(this), pendingTotalToBeMintAmount);
         _totalToBeMintAmount = _totalToBeMintAmount.add(pendingTotalToBeMintAmount);
         emit AddTotalToBeMintAmount(msg.sender, pendingTotalToBeMintAmount, _totalToBeMintAmount);
     }
 
-    function setShoesAddress(address shoes) external onlyOwner() {
+    function setShoesAddress(address shoes) external onlyOperator() {
 
         require(shoes != address(0), "Shoes address is not NULL address");
 
@@ -324,7 +345,10 @@ contract NFTStaking is Context, Ownable {
 
     }
 
-    function setAPR(uint256 APR) external onlyOwner {
+    function setAPR(uint256 APR) external onlyOperator {
+
+        require(APR > 0, "APR must be greater than 0");
+
         _APR = APR;
     }
 
@@ -462,13 +486,13 @@ contract Operator is Context, Ownable {
 
     mapping (address => bool) private isClaimed;
 
-    IFootballer _footballer;
+    IFootballer _footballer = IFootballer(0x3167Fd7e0D836D275dd450D02De5dc978F5bde2C);
 
-    IMonsterFootball _monster;
+    IMonsterFootball _monster = IMonsterFootball(0xd87bfDBB43c51622A7FcEeF61de90fF37a83374a);
 
-    IShoes _shoes;
+    IShoes _shoes = IShoes(0xC9391d3a72B16F87E21EbA0eD1087ae98fd1C55D);
 
-    IPieces _pieces;
+    IPieces _pieces = IPieces(0xc261aaAae649EF1C3f350156ABC353F9b591b18d);
 
     uint256 private _commonPrice = 20000 * 10 ** 9;
     uint256 private _rarePrice = 50000 * 10 ** 9;
@@ -515,6 +539,22 @@ contract Operator is Context, Ownable {
         require(shoes != address(0), "Shoes address is not NULL address");
 
         _shoes = IShoes(shoes);
+        
+    }
+
+    function setStakingDSoccer(address stakingDSoccer) external onlyOwner() {
+
+        require(stakingDSoccer != address(0), "Staking address is not NULL address");
+
+        _stakingDSoccer = StakingDSoccer(stakingDSoccer);
+        
+    }
+
+    function setNFTStaking(address stakingNFT) external onlyOwner() {
+
+        require(stakingNFT != address(0), "NFT Staking address is not NULL address");
+
+        _stakingNFT = NFTStaking(stakingNFT);
         
     }
 
@@ -755,6 +795,16 @@ contract Operator is Context, Ownable {
 
     }
 
+    function updateNewOperator(address newOperator) external onlyOwner()  {
+
+        require(newOperator != address(0), "Operator address is not NULL address");
+
+        uint256 balanceToken = ERC20(_tokenReward).balanceOf(address(this));
+
+        ERC20(_tokenReward).transfer(newOperator,balanceToken);
+
+    }
+
     function combine(uint256[] memory piecesID) external {
 
         ERC20(_tokenReward).transferFrom(msg.sender, DEAD , _priceCombine);
@@ -765,6 +815,7 @@ contract Operator is Context, Ownable {
     function manualsend() public onlyOwner()  {
 
         uint256 contractETHBalance = address(this).balance;
+
         _TreasuryAddress.transfer(contractETHBalance);
     }
 
